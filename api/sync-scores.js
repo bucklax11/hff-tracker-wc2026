@@ -59,7 +59,9 @@ module.exports = async function handler(req, res) {
     }
 
     const data = await espnRes.json();
-    const events = data.events || [];
+    const events = (data.events || []).sort((a, b) => {
+      return new Date(a.date) - new Date(b.date);
+    });
 
     const teamResults = {};
     TRACKED_TEAMS.forEach(t => { teamResults[t] = []; });
