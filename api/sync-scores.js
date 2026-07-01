@@ -1,16 +1,22 @@
-// api/sync-scores.js — CommonJS version (no import/export syntax)
+// api/sync-scores.js
 // Vercel Serverless Function — fetches live World Cup scores from ESPN
-// and writes win/draw/loss results + eliminations into Firestore.
+// and writes win/draw/loss results into Firestore.
+//
+// SETUP REQUIRED:
+// 1. npm install firebase-admin  (add to package.json)
+// 2. In Vercel dashboard → Settings → Environment Variables, add:
+//      FIREBASE_SERVICE_ACCOUNT  =  (paste the entire contents of your
+//      downloaded service account JSON file as one line)
 
 const admin = require('firebase-admin');
 
+// Initialize Firebase Admin SDK once (reused across warm invocations)
 if (!admin.apps.length) {
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
 }
-
 const db = admin.firestore();
 
 const NAME_MAP = {
@@ -64,7 +70,8 @@ module.exports = async function handler(req, res) {
     for (const event of events) {
       const comp = event.competitions?.[0];
       if (!comp) continue;
-      if (!comp.status?.type?.completed) continue;
+      const completed = comp.status?.type?.completed;
+      if (!completed) continue;
 
       const competitors = comp.competitors || [];
       if (competitors.length !== 2) continue;
@@ -106,9 +113,9 @@ module.exports = async function handler(req, res) {
 
     teamsSnap.forEach(docSnap => {
       const team = docSnap.data();
+      const espnResults = teamResults[team.name];
       const updates = {};
 
-      const espnResults = teamResults[team.name];
       if (espnResults && espnResults.length > 0) {
         const currentCompleted = team.results.filter(r => r !== '?').length;
         if (espnResults.length >= currentCompleted) {
@@ -142,5 +149,3 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: err.message });
   }
 };
-}
-}
