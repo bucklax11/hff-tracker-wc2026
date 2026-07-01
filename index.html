@@ -267,7 +267,7 @@
   // Seed the database if it's empty (first run only)
   async function seedIfEmpty() {
     const snap = await getDocs(teamsCollection);
-    if (snap.empty) {
+    if (true) {
       const batch = writeBatch(db);
       SEED_DATA.forEach(t => {
         batch.set(doc(db, "teams", t.id), {
